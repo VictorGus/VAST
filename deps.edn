@@ -8,6 +8,7 @@
          clj-postgresql              {:mvn/version "0.7.0"}
          hikari-cp                   {:mvn/version "2.10.0"}
          org.clojure/tools.logging   {:mvn/version "0.5.0"}
+         org.clojure/data.csv        {:mvn/version "1.0.0"}
          org.postgresql/postgresql   {:mvn/version "42.2.9.jre7"}
          http-kit                    {:mvn/version "2.3.0"}
          clj-yaml                    {:mvn/version "0.4.0"}
@@ -23,6 +24,7 @@
          nilenso/honeysql-postgres   {:mvn/version "0.2.6"}
          chrono                      {:local/root "src/chrono"}
          route-map                   {:mvn/version "0.0.7-RC4"}
+         dk.ative/docjure            {:mvn/version "1.14.0"}
          json-schema                 {:mvn/version "0.2.0-RC11"}
          cheshire                    {:mvn/version "5.9.0"}}
 

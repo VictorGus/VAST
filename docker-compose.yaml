@@ -1,0 +1,14 @@
+version: '2.0'
+services:
+  db:
+    image: "${PGIMAGE}"   
+    container_name: vast-db 
+    ports:
+      - "${PGPORT}:5432"
+    volumes:
+      - "./init:/docker-entrypoint-initdb."
+      - "./pgdata:/var/lib/postgresql/data"
+    environment:
+     POSTGRES_USER:     "${PGUSER}"
+     POSTGRES_PASSWORD: "${PGPASSWORD}"
+     POSTGRES_DB:       "${PGDATABASE}"

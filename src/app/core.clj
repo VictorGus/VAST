@@ -7,23 +7,30 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.json :refer [wrap-json-response]]
+            [ring.middleware.json   :refer [wrap-json-response wrap-json-body]]
+            [app.dbcore   :as db]
+            [app.manifest :as m]
+            [app.loader]
             [org.httpkit.server :as server]
             [clojure.string :as str])
-  (:import [java.io File]))
+  (:import [java.io File])
+  (:gen-class))
 
-(def routes
-  {"Test"   {:GET (fn [req] {:status 200 :body "sample endpoint"})}})
+(defn routes [ctx]
+  {"meteorological-data" {"$bulk" {:POST (app.loader/bulk-load-meteorological-data ctx)}
+                          :POST (app.loader/load-meteorological-data ctx)
+                          :GET  (app.loader/retrieve-meteorological-data ctx)}})
 
 (defn params-to-keyword [params]
   (reduce-kv (fn [acc k v]
-               (assoc acc (keyword k) v))
-             {} params))
+               (assoc acc (keyword k) v)) {} params))
 
-(defn handler [{meth :request-method uri :uri :as req}]
-  (if-let [res (rm/match [meth uri] routes)]
-    ((:match res) (-> (assoc req :params (params-to-keyword (:params req)))
-                      (update-in [:params] merge (:params res))))
-    {:status 404 :body {:error "Not found"}}))
+(defn handler [ctx]
+  (fn [{meth :request-method uri :uri :as req}]
+    (if-let [res (rm/match [meth uri] (routes ctx))]
+      ((:match res) (-> (assoc req :params (params-to-keyword (:params req)))
+                        (update-in [:params] merge (:params res))))
+      {:status 404 :body {:error "Not found"}})))
 
 (defn preflight
   [{meth :request-method hs :headers :as req}]
@@ -51,9 +58,10 @@
       (let [resp (dispatch req)]
         (-> resp (allow req))))))
 
-(def app
-  (-> handler
+(defn app [ctx]
+  (-> (handler ctx)
       mk-handler
+      wrap-json-body
       wrap-params
       wrap-json-response
       wrap-reload))
@@ -66,10 +74,19 @@
     (reset! state nil)))
 
 (defn start-server []
-  (reset! state (server/run-server app {:port 9090})))
+  (let [app* (app (assoc m/app-config :db/connection db/pool-config))]
+    (reset! state (server/run-server app* {:port (as-> (get-in m/app-config [:app :port]) port
+                                                  (cond-> port
+                                                    (string? port)
+                                                    Integer/parseInt))}))))
 
 (defn restart-server [] (stop-server) (start-server))
 
+(defn -main [& [_ _]]
+  (start-server)
+  (println "Server started"))
+
 (comment
   (restart-server)
+
   )

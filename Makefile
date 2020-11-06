@@ -1,7 +1,20 @@
 SHELL = bash
 
+PGPORT     ?= 5443
+PGHOST     ?= localhost
+PGUSER     ?= postgres
+PGDATABASE ?= vastbase
+PGPASSWORD ?= postgres
+PGIMAGE    ?= postgres:latest
+
 .EXPORT_ALL_VARIABLES:
 .PHONY: test build
+
+up:
+	docker-compose up -d
+
+down:
+	docker-compose down
 
 repl:
 	rm -rf .cpcache/ && rm -rf ui/.cpcache/ && DEBUG=true && cd ui && clojure -A:dev:test:nrepl

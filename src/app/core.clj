@@ -18,8 +18,13 @@
 
 (defn routes [ctx]
   {"meteorological-data" {"$bulk" {:POST (app.loader/bulk-load-meteorological-data ctx)}
+                          [:id]   {:GET (app.loader/retrieve-meteorological-data ctx)}
                           :POST (app.loader/load-meteorological-data ctx)
-                          :GET  (app.loader/retrieve-meteorological-data ctx)}})
+                          :GET  (app.loader/retrieve-meteorological-data ctx)}
+   "sensor-data"         {"$bulk" {:POST (app.loader/bulk-load-sensor-data ctx)}
+                          [:id]   {:GET (app.loader/retrieve-sensor-data ctx)}
+                          :POST (app.loader/load-sensor-data ctx)
+                          :GET  (app.loader/retrieve-sensor-data ctx)}})
 
 (defn params-to-keyword [params]
   (reduce-kv (fn [acc k v]

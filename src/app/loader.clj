@@ -167,6 +167,35 @@
         {:status 500
          :body (str e)}))))
 
+(defn delete-meteorological-data [{connection :db/connection :as ctx}]
+  (fn [{:keys [params] :as request}]
+    (try
+      (let [q-result (db/execute {:delete-from :meteo_data
+                                  :where [:= :id (:id params)]} connection)]
+        (if (> q-result 0)
+          {:status 200
+           :body {:message "ok"}}
+          {:status 404
+           :body {:message "Not found"}}))
+      (catch Exception e
+        {:status 500
+         :body (str e)}))))
+
+
+(defn delete-sensor-data [{connection :db/connection :as ctx}]
+  (fn [{:keys [params] :as request}]
+    (try
+      (let [q-result (db/execute {:delete-from :sensor_data
+                                  :where [:= :id (:id params)]} connection)]
+        (if (> q-result 0)
+          {:status 200
+           :body {:message "ok"}}
+          {:status 404
+           :body {:message "Not found"}}))
+      (catch Exception e
+        {:status 500
+         :body (str e)}))))
+
 (comment
 
 

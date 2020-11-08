@@ -43,3 +43,4 @@
 
 (defn insert-multi [ctx table columns data]
   (jdbc/insert-multi! @ctx table columns data))
+

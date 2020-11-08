@@ -17,12 +17,14 @@
   (:gen-class))
 
 (defn routes [ctx]
-  {"meteorological-data" {"$bulk" {:POST (app.loader/bulk-load-meteorological-data ctx)}
-                          [:id]   {:GET (app.loader/retrieve-meteorological-data ctx)}
-                          :POST (app.loader/load-meteorological-data ctx)
-                          :GET  (app.loader/retrieve-meteorological-data ctx)}
-   "sensor-data"         {"$bulk" {:POST (app.loader/bulk-load-sensor-data ctx)}
-                          [:id]   {:GET (app.loader/retrieve-sensor-data ctx)}
+  {"meteorological-data" {"$bulk" {:POST   (app.loader/bulk-load-meteorological-data ctx)}
+                          [:id]   {:GET    (app.loader/retrieve-meteorological-data ctx)
+                                   :DELETE (app.loader/delete-meteorological-data ctx)}
+                          :POST   (app.loader/load-meteorological-data ctx)
+                          :GET    (app.loader/retrieve-meteorological-data ctx)}
+   "sensor-data"         {"$bulk" {:POST   (app.loader/bulk-load-sensor-data ctx)}
+                          [:id]   {:GET    (app.loader/retrieve-sensor-data ctx)
+                                   :DELETE (app.loader/delete-sensor-data ctx)}
                           :POST (app.loader/load-sensor-data ctx)
                           :GET  (app.loader/retrieve-sensor-data ctx)}})
 

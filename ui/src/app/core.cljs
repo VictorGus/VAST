@@ -9,7 +9,7 @@
             [app.routes :as routes]
             [app.pages :as pages]
             [app.layout :as layout]
-            [app.sample-page.view]))
+            [app.data-grid.view]))
 
 (rf/reg-event-fx
  ::initialize
@@ -28,8 +28,6 @@
     (fn []
       (let [page (get @pages/pages (:match @route))
             params (:params @route)]
-        (println @route)
-        (println @pages/pages)
         [layout/layout
          (if page
            [page params]

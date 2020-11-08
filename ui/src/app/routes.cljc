@@ -1,6 +1,6 @@
 (ns app.routes)
 
-(def routes {:. :app.sample-page.model/sample})
+(def routes {:. :app.data-grid.model/index})
 
 (defn route-index* [route pth]
   (merge

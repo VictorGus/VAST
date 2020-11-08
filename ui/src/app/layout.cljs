@@ -11,6 +11,7 @@
 
 (defn layout [page]
   [:div.h-100 layout-style
+   [:nav.navbar.navbar-dark.bg-primary]
    [flash/flashes]
    [:div#layout
     [:div#content page]]])

@@ -137,10 +137,22 @@
              :body {:message "Not found"}}
             {:status 200
              :body q-result}))
-        (let [q-result (db/query {:select [:*]
-                                  :from [:meteo_data]} connection)]
+        (let [records-count (-> {:select [:%count.*]
+                                 :from [:meteo_data]}
+                                (db/query-first connection)
+                                :count)
+              q-result      (db/query (cond-> {:select [:*]
+                                               :from [:meteo_data]}
+                                        (:page params)
+                                        (assoc :offset (* (- (Integer/parseInt (:page params)) 1)
+                                                          100)
+                                               :limit  100)) connection)]
           {:status 200
-           :body {:entry {:data q-result}}}))
+           :body (cond-> {:total records-count
+                          :entry {:data q-result}}
+                   (:page params)
+                   (assoc :page (:page params) :page-size 100
+                          :hasMore? (not (empty? q-result))))}))
       (catch Exception e
         {:status 500
          :body (str e)}))))
@@ -159,10 +171,22 @@
              :body {:message "Not found"}}
             {:status 200
              :body q-result}))
-        (let [q-result (db/query {:select [:*]
-                                  :from [:sensor_data]} connection)]
+        (let [records-count (-> {:select [:%count.*]
+                                 :from [:sensor_data]}
+                                (db/query-first connection)
+                                :count)
+              q-result (db/query (cond-> {:select [:*]
+                                          :from [:sensor_data]}
+                                   (:page params)
+                                   (assoc :offset (* (- (Integer/parseInt (:page params)) 1)
+                                                     100)
+                                          :limit  100)) connection)]
           {:status 200
-           :body {:entry {:data q-result}}}))
+           :body (cond-> {:total records-count
+                          :entry {:data q-result}}
+                   (:page params)
+                   (assoc :page (:page params) :page-size 100
+                          :hasMore? (not (empty? q-result))))}))
       (catch Exception e
         {:status 500
          :body (str e)}))))
@@ -197,6 +221,5 @@
          :body (str e)}))))
 
 (comment
-
 
   )

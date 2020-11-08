@@ -13,14 +13,14 @@
 (defn meteo-data-grid [data]
   (fn [data]
     [:div.w-50.container grid-styles
-     [:div.row
-      [:div.col-5.p-2.border-left.border-bottom
+     [:div.row.border-top.border-bottom
+      [:div.col-5.p-2.border-left
        [:p.font-weight-bold.text-center "DateTime"]]
-      [:div.text-center.col-3.p-2.border-bottom
+      [:div.text-center.col-3.p-2
        [:p.font-weight-bold.text-center"Wind direction"]]
-      [:div.text-center.col-2.p-2.border-bottom
+      [:div.text-center.col-2.p-2
        [:p.font-weight-bold.text-center "Wind speed"]]
-      [:div.text-center.col-2.p-2.border-bottom.border-right
+      [:div.text-center.col-2.p-2.border-right
        [:p.font-weight-bold.text-center "Elevation"]]]
      (for [el data]
        [:div.grid-record.row
@@ -38,8 +38,9 @@
                                                                      :margin "5px"
                                                                      :font-size "11px"}
                                                              :on-click (fn [e]
-                                                                         (rf/dispatch  [::model/delete-record {:id (:id el)
-                                                                                                               :type :meteorological-data}]))}]
+                                                                         (rf/dispatch [::model/delete-record
+                                                                                       {:id (:id el)
+                                                                                        :type :meteorological-data}]))}]
          [:p.text-center (:elevation el)]]])]))
 
 (pages/reg-subs-page

@@ -36,7 +36,7 @@
 
 (defn normalize-date-time [inst-date]
   (when inst-date
-    (.format (java.text.SimpleDateFormat. "yyy-MM-dd'T'HH:mm:ss") inst-date)))
+    (.format (java.text.SimpleDateFormat. "yyy-MM-dd HH:mm:ss") inst-date)))
 
 (defn bulk-load-meteorological-data [{{:keys [working-dir]} :app
                                 connection :db/connection :as ctx}]
@@ -46,12 +46,17 @@
         (let [{{:keys [columns sheet]} :meteo} xl-sheets
               xls-sheet (->> body load-workbook
                              (select-sheet sheet))
-              data      (select-columns columns xls-sheet)]
+              data      (filter
+                         :date
+                         (select-columns columns xls-sheet))]
           (db/insert-multi connection
                            :meteo_data
                            [:id :date_ts :direction :speed :elevation]
                            (map #(as-> % el
-                                   (update el :date normalize-date-time)
+                                   (update el :date (fn [v]
+                                                      (-> v
+                                                          normalize-date-time
+                                                          java.sql.Timestamp/valueOf)))
                                    (vals el)
                                    (map (fn [e]
                                           (if (nil? e)
@@ -72,8 +77,10 @@
       (try
         (db/execute {:insert-into :meteo_data
                      :values [(merge {:id (uuid)}
-                                     (select-keys body [:direction :speed
-                                                        :date_ts :elevation]))]} connection)
+                                     (-> body
+                                         (update :date_ts #(java.sql.Timestamp/valueOf %))
+                                         (select-keys [:direction :speed
+                                                       :date_ts :elevation])))]} connection)
         {:body body
          :status 201}
         (catch Exception e
@@ -93,7 +100,10 @@
                            :sensor_data
                            [:id :chemical :monitor :date_ts :reading]
                            (map #(as-> % el
-                                   (update el :date normalize-date-time)
+                                   (update el :date (fn [v]
+                                                      (-> v
+                                                          normalize-date-time
+                                                          java.sql.Timestamp/valueOf)))
                                    (vals el)
                                    (map (fn [e]
                                           (if (nil? e)
@@ -221,5 +231,6 @@
          :body (str e)}))))
 
 (comment
+  (update {:a "2004-10-19 10:23:54"} :a #(java.sql.Timestamp/valueOf %))
 
   )

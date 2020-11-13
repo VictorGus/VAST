@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [re-frame.core :as rf]
             [app.styles :as styles]
+            [app.modal  :as modal]
             [zframes.flash :as flash]))
 
 (def menu
@@ -14,7 +15,7 @@
 
 (def layout-style
   (styles/style
-   [:.flashes {:position "fixed" :top "20px" :right "20px" :max-width "500px" :z-index 200}
+   [:.flashes {:position "fixed" :top "60px" :right "20px" :max-width "500px" :z-index 999}
     [:ul {:padding-left "20px"}]]))
 
 (defn layout [page]
@@ -30,4 +31,6 @@
           (:title item)]])]]]
    [flash/flashes]
    [:div
-    [:div#content page]]])
+    [:div#content
+     [modal/modal]
+     page]]])

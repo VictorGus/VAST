@@ -75,6 +75,31 @@
     :db (assoc-in db [index :file-upload :uploading?] false)}))
 
 (rf/reg-event-fx
+ ::success-send
+ (fn [{db :db} _]
+   {:dispatch-n [[:flash/success {:msg "Record has been created"}]
+                 [::form/init]]
+    :db (dissoc db :modal)}))
+
+(rf/reg-event-fx
+ ::send-data
+ (fn [{db :db} [_ current-tab]]
+   (let [uri (cond
+               (= current-tab :meteo)
+               "/meteorological-data"
+
+               (= current-tab :sensor)
+               "/sensor-data"
+
+               :else
+               "/meteorological-data")
+         data (form/eval-form db current-tab)]
+     {:xhr/fetch {:uri uri
+                  :body data
+                  :method "post"
+                  :success {:event ::success-send}}})))
+
+(rf/reg-event-fx
  index
  (fn [{db :db} [pid phase params]]
    (cond
@@ -85,7 +110,7 @@
                                                     :params
                                                     :page)}]
                    [::form/init]
-                   #_[::init-file-modal]]
+                   [::init-file-modal]]
       :db (assoc-in db [index :current-tab] :meteo)})))
 
 (rf/reg-event-fx

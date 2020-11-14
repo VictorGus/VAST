@@ -30,7 +30,7 @@
 
          (= :date (:type i))
          inputs/date-input)
-       form/form-path (:form-path i)]])])
+       (:form-path i) (:path i)]])])
 
 (defn modal-form [current-tab]
   [:<>
@@ -38,31 +38,40 @@
                  (= :meteo current-tab)
                  [{:label "Wind direction"
                    :type :text
-                   :form-path [:wind_direction]}
+                   :form-path form/form-path-meteo
+                   :path [:wind_direction]}
                   {:label "Wind speed"
                    :type :text
-                   :form-path [:wind_speed]}
+                   :form-path form/form-path-meteo
+                   :path [:wind_speed]}
                   {:label "Elevation"
                    :type :text
-                   :form-path [:elevation]}
+                   :form-path form/form-path-meteo
+                   :path [:elevation]}
                   {:label "Date"
                    :type :date
-                   :form-path [:date_ts]}]
+                   :form-path form/form-path-meteo
+                   :path [:date_ts]}]
 
                  (= :sensor current-tab)
                  [{:label "Chemical"
                    :type :text
-                   :form-path [:wind_direction]}
+                   :form-path form/form-path-sensor
+                   :path [:chemical]}
                   {:label "Monitor"
                    :type :text
-                   :form-path [:wind_speed]}
+                   :form-path form/form-path-sensor
+                   :path [:monitor]}
                   {:label "Reading"
                    :type :text
-                   :form-path [:elevation]}
+                   :form-path form/form-path-sensor
+                   :path [:reading]}
                   {:label "Date"
                    :type :date
-                   :form-path [:date_ts]}])]
-   [:div.btn.btn-primary.mt-5.pointer "Create record"]])
+                   :form-path form/form-path-sensor
+                   :path [:date_ts]}])]
+   [:div.btn.btn-primary.mt-5.pointer {:on-click #(rf/dispatch [::model/send-data current-tab])}
+    "Create record"]])
 
 (defn modal-file [current-tab]
   [:<>

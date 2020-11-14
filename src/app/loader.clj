@@ -129,7 +129,7 @@
         (db/execute {:insert-into :sensor_data
                      :values [(merge {:id (uuid)}
                                      (select-keys body [:monitor :chemical
-                                                        :date :reading]))]} connection)
+                                                        :date_ts :reading]))]} connection)
         {:body body
          :status 201}
         (catch Exception e

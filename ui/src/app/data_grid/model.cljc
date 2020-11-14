@@ -71,7 +71,8 @@
 (rf/reg-event-fx
  ::success-upload
  (fn [{db :db} _]
-   {:dispatch [:flash/success {:msg "File has been uploaded"}]
+   {:dispatch-n [[::retrieve-data-list]
+                 [:flash/success {:msg "File has been uploaded"}]]
     :db (assoc-in db [index :file-upload :uploading?] false)}))
 
 (rf/reg-event-fx

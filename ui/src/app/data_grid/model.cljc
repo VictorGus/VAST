@@ -21,6 +21,60 @@
                   :success {:event ::show-data}}})))
 
 (rf/reg-event-fx
+ ::init-file-modal
+ (fn [{db :db} _]
+   {:db (-> db
+         (assoc-in [index :file-upload :overwrite] false)
+         (assoc-in [index :file-upload :content?]  false))}))
+
+(rf/reg-event-fx
+ ::overwrite-data
+ (fn [{db :db} _]
+   {:db (update-in db [index :file-upload :overwrite] not)}))
+
+(rf/reg-event-fx
+ ::add-file
+ (fn [{db :db} [_ {:keys [file current-tab]}]]
+   (let [uri (cond
+               (= current-tab :meteo)
+               "/meteorological-data/$bulk"
+
+               (= current-tab :sensor)
+               "/sensor-data/$bulk"
+
+               :else
+               "/meteorological-data/$bulk")]
+     {:db (-> db
+              (assoc-in [index :file-upload :uri] uri)
+              (assoc-in [index :file-upload :content?] true)
+              (assoc-in [index :file-upload :file] file))})))
+
+(rf/reg-event-fx
+ ::upload-file
+ (fn [{db :db} [_ efx]]
+   (let [{:keys [uri file overwrite content?]} (get-in db [index :file-upload])]
+     (if content?
+       {:json/fetch (cond-> {:uri  uri
+                             :cnt-type "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                             :method "post"
+                             :success {:event ::success-upload}
+                             :files file}
+
+                      overwrite
+                      (assoc-in [:params :overwrite] true))
+        :db (-> db
+                (dissoc :modal)
+                (assoc-in [index :file-upload :content?] false)
+                (assoc-in [index :file-upload :uploading?] true))}
+       {:dispatch [:flash/danger {:msg "No file is selected"}]}))))
+
+(rf/reg-event-fx
+ ::success-upload
+ (fn [{db :db} _]
+   {:dispatch [:flash/success {:msg "File has been uploaded"}]
+    :db (assoc-in db [index :file-upload :uploading?] false)}))
+
+(rf/reg-event-fx
  index
  (fn [{db :db} [pid phase params]]
    (cond
@@ -30,7 +84,8 @@
      {:dispatch-n [[::retrieve-data-list {:page (-> params
                                                     :params
                                                     :page)}]
-                   [::form/init]]
+                   [::form/init]
+                   #_[::init-file-modal]]
       :db (assoc-in db [index :current-tab] :meteo)})))
 
 (rf/reg-event-fx

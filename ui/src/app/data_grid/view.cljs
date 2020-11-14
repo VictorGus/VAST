@@ -62,7 +62,27 @@
                   {:label "Date"
                    :type :date
                    :form-path [:date_ts]}])]
-   [:div.btn.btn-primary.mt-5 "Create record"]])
+   [:div.btn.btn-primary.mt-5.pointer "Create record"]])
+
+(defn modal-file [current-tab]
+  [:<>
+   [:div.row.m-4
+    [:input {:type "file"
+             :onChange (fn [e]
+                         (let [file (aget (.-files (.querySelector js/document "input[type=file]")) 0)]
+                           (rf/dispatch [::model/add-file {:file file
+                                                           :current-tab current-tab}])))}]
+    [:div.form-check
+     [:input.form-check-input {:type "checkbox"
+                               :on-click #(rf/dispatch [::model/overwrite-data])}]
+     [:label.form-check-label
+      "Overwrite data"]]
+    #_[:label.btn.btn-primary.btn-file.pointer.mr-4
+       "Choose file"
+       [:input {:type "file"
+                :style {:display "none"}}]]]
+   [:div.btn.btn-primary.ml-4.pointer {:on-click #(rf/dispatch [::model/upload-file [::modal/close-modal]])}
+    "Upload"]])
 
 (defn meteo-data-grid [data]
   (fn [data]
@@ -84,6 +104,19 @@
        "Sensor data"]]
      [:div.border.rounded-top.p-3.block
       [:div.container
+       (if (-> data :file-upload :uploading?)
+         [:button.btn.btn-primary.p-1.mb-2.mr-3 {:type "button"
+                                                 :disabled true}
+          [:span.spinner-border.spinner-border-sm.mr-2 {:role "status"
+                                                        :aria-hidden "true"}]
+          "Uploading"]
+         [:div.pointer.btn.btn-primary.p-1.mb-2.mr-3 {:on-click #(rf/dispatch
+                                                                  [::modal/modal {:persistent true
+                                                                                  :title "Upload from file"
+                                                                                  :close (rf/dispatch [::model/init-file-modal])
+                                                                                  :body [modal-file (:current-tab data)]}])}
+          [:i.fas.fa-file {:style {:font-size "14px"}}]
+          [:span.font-weight-bold.ml-1 "Upload from file"]])
        [:div.pointer.btn.btn-primary.p-1.mb-2 {:on-click #(rf/dispatch
                                                            [::modal/modal {:persistent true
                                                                            :title "Create new record"

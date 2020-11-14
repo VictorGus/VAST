@@ -40,7 +40,7 @@
 
 (defn bulk-load-meteorological-data [{{:keys [working-dir]} :app
                                 connection :db/connection :as ctx}]
-  (fn [{:keys [body headers] :as request}]
+  (fn [{:keys [body headers params] :as request}]
     (if (= (get headers "content-type") "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
       (try
         (let [{{:keys [columns sheet]} :meteo} xl-sheets
@@ -49,6 +49,10 @@
               data      (filter
                          :date
                          (select-columns columns xls-sheet))]
+
+          (when (:overwrite params)
+            (db/execute {:truncate :meteo_data} connection))
+
           (db/insert-multi connection
                            :meteo_data
                            [:id :date_ts :direction :speed :elevation]

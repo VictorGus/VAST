@@ -42,7 +42,7 @@
   (swap! abort-controller-cache assoc req-id (js/AbortController.))
   (get @abort-controller-cache req-id))
 
-(defn *json-fetch [{:keys [req-id uri format headers cookies is-fetching-path params success error] :as opts}]
+(defn *json-fetch [{:keys [req-id uri format headers cookies is-fetching-path params success error cnt-type] :as opts}]
   (let [{:keys [token base-url x-correlation-id]} (get-in @db/app-db [:xhr :config])
         screen (get-in @db/app-db [:route-map/current-route :match])
         abort-controller (when req-id (get-abort-controller req-id))
@@ -53,11 +53,11 @@
                          (.stringify js/JSON)
                          js/btoa)
         headers (cond-> {"accept"        fmt
-                         "x-correlation-id" x-correlation-id 
+                         "x-correlation-id" x-correlation-id
                          "authorization" (str "Bearer " token)}
                   x-audit                              (assoc "x-audit" x-audit)
                   (or (nil? token) (str/blank? token)) (dissoc "authorization")
-                  (nil? (:files opts))                 (assoc "Content-Type" "application/json")
+                  (nil? (:files opts))                 (assoc "Content-Type" (or cnt-type "application/json"))
                   true                                 (merge (or headers {})))
         fetch-opts (-> (merge {:method "get" :mode "cors" :credentials "same-origin"}
                               (when abort-controller {:signal (.-signal abort-controller)})
@@ -66,7 +66,7 @@
                        (assoc :headers headers))
         fetch-opts (cond-> fetch-opts
                      (:body opts) (assoc :body (if (string? (:body opts)) (:body opts) (.stringify js/JSON (clj->js (:body opts)))))
-                     (:files opts) (assoc :body (make-form-data (:files opts))))
+                     (:files opts) (assoc :body (:files opts) #_(make-form-data (:files opts))))
         url (str base-url uri)]
 
     (when is-fetching-path (rf/dispatch [::fetch-start is-fetching-path]))

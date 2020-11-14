@@ -27,4 +27,4 @@
                     (assoc :default-value v)
                     (assoc :value v)
                     (assoc :type "datetime-local")
-                    (update :class (fn [class] (str class (when errs " is-invalid") ))))]))))
+                    (update :class (fn [class] (str (or class "form-control") (when errs " is-invalid") ))))]))))

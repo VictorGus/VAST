@@ -75,17 +75,21 @@
 
 (defonce state (atom nil))
 
+(defn dev-ctx []
+  (:ctx @state))
+
 (defn stop-server []
   (when-not (nil? @state)
-    (@state :timeout 100)
+    ((:app @state) :timeout 100)
     (reset! state nil)))
 
 (defn start-server []
   (let [app* (app (assoc m/app-config :db/connection db/pool-config))]
-    (reset! state (server/run-server app* {:port (as-> (get-in m/app-config [:app :port]) port
-                                                  (cond-> port
-                                                    (string? port)
-                                                    Integer/parseInt))}))))
+    (reset! state {:ctx db/pool-config
+                   :app (server/run-server app* {:port (as-> (get-in m/app-config [:app :port]) port
+                                                         (cond-> port
+                                                           (string? port)
+                                                           Integer/parseInt))})})))
 
 (defn restart-server [] (stop-server) (start-server))
 
@@ -95,5 +99,6 @@
 
 (comment
   (restart-server)
+
 
   )

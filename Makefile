@@ -16,6 +16,9 @@ up:
 down:
 	docker-compose down
 
+unlock-pgdata:
+	sudo chmod a+rwx pgdata && sudo chown -R root:${USER} pgdata
+
 repl:
 	rm -rf .cpcache/ && rm -rf ui/.cpcache/ && DEBUG=true && cd ui && clojure -A:dev:test:nrepl
 

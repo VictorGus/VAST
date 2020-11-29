@@ -4,6 +4,7 @@
                                          load-workbook row-seq cell-seq]]
    [clojure.data.csv :as csv]
    [app.dbcore :as db]
+   [app.filters]
    [honeysql.core :as hsql]
    [clojure.java.io :as io]))
 
@@ -18,6 +19,137 @@
                       :C :date
                       :D :reading}
             :sheet   "Sheet1"}})
+
+(def filters
+  {:date {:none (fn [v] [:is [:resource->> :date] nil])
+          :some (fn [v] [:is-not [:resource->> :date] nil])
+          :not  (fn [v] [:not-in [:pg/coalesce [:pg/cast [:resource->> :date] :date] "1900-01-01"]
+                         [:pg/params-list (:not v)]])
+          :else (fn [v] [:in [:pg/cast [:resource->> :date] :date] [:pg/params-list (:values v)]])}
+
+   :status {:none (fn [v] [:is [:resource->> :status] nil])
+            :some (fn [v] [:is-not [:resource->> :status] nil])
+            :not  (fn [v]
+                    [:not-in [:pg/coalesce [:resource->> :status] "MISSED"] [:pg/params-list (:not v)]])
+            :else (fn [v] [:in [:resource->> :status] [:pg/params-list (:values v)]])}
+
+   :location {:none (fn [v] [:is [:resource->> :location] nil])
+              :some (fn [v] [:is-not [:resource->> :location] nil])
+              :not  (fn [v] [:not-in [:resource#>> [:location :id]] [:pg/params-list (:not v)]])
+              :else (fn [v]
+                      [:in [:resource#>> [:location :id]] [:pg/params-list (:values v)]])}
+
+   :division {:not (fn [v] [:not-in
+                             [:resource#>> [:location :id]]
+                             {:ql/type :pg/sub-select
+                              :select :id
+                              :from :Department
+                              :where [:in [:resource#>> [:part_of :id]] [:pg/params-list (:not v)]]}])
+              :else (fn [v] [:in
+                             [:resource#>> [:location :id]]
+                             {:ql/type :pg/sub-select
+                              :select :id
+                              :from :Department
+                              :where [:in [:resource#>> [:part_of :id]] [:pg/params-list (:values v)]]}])}
+
+   :tag  {:none (fn [v] [:is [:resource->> :tags] nil])
+          :some (fn [v] [:is-not [:resource->> :tags] nil])
+          :not (fn [v]
+                 [:or [:is [:resource-> :tags] nil]
+                  [:not [:pg/include-op [:resource-> :tags]
+                         (into ^:jsonb/array[] (:not v))]]])
+          :else (fn [v]
+                  [:pg/include-op [:resource-> :tags]
+                   (into ^:jsonb/array[] (:values v))])}
+
+   :text  {:else (fn [v]
+                   (let [v (str "%" (:values v) "%")]
+                     [:or
+                      [:ilike [:pg/sql "resource::text"] [:pg/param v]]
+                      [:ilike :id [:pg/param v]]]))}
+
+   :id {:else (fn [v]
+                ^:pg/op[:in :id
+                          [:pg/params-list (vec (:values v))]])
+        :range (fn [{[start end] :range}]
+                 ^:pg/op[:and
+                         ^:pg/op[:>= :id [:pg/param start]]
+                         ^:pg/op[:<= :id [:pg/param end]]])
+        :not-in-range (fn [{[start end] :not-in-range}]
+                        [:not-with-parens ^:pg/op[:and
+                                                  ^:pg/op[:>= :id [:pg/param start]]
+                                                  ^:pg/op[:<= :id [:pg/param end]]]])}
+
+   ;;:route {:none (fn [v] [:is [:resource->> :primary_payer] nil])
+   ;;        :some (fn [v] [:is-not [:resource->> :primary_payer] nil])
+   ;;        :not  (fn [v] [:not-in [:pg/coalesce [:resource->> :primary_payer] "MISSED"] [:pg/params-list (:not v)]])
+   ;;        :else (fn [v] [:in [:resource->> :primary_payer] [:pg/params-list (:values v)]])}
+   ;;
+   ;;:ws    {:else (fn [{vs :values}]
+   ;;                [:in :id {:ql/type :pg/sub-select
+   ;;                          :select [:pg/sql "jsonb_array_elements_text(resource->'case_ids')"]
+   ;;                          :from :billingcaseworkset
+   ;;                          :where [:in :id [:pg/params-list vs]]}])}
+
+   :client    {:else (fn [{vs :values}]
+                       [:in [:resource#>> [:client :id]] [:pg/params-list vs]])
+               :some (fn [v] [:is-not [:resource#>> [:client :id]] nil])
+               :none (fn [v] [:is [:resource#>> [:client :id]] nil])}
+
+   :patient   {:else (fn [{vs :values}]
+                       [:or
+                        [:ilike [:resource#>> [:patient :display]] (first vs)]
+                        [:in [:resource#>> [:patient :id]] [:pg/params-list vs]]])
+               :some (fn [v] [:is-not [:resource#>> [:patient :id]] nil])
+               :none (fn [v] [:is [:resource#>> [:patient :id]] nil])}
+
+   :assignee    {:else (fn [{vs :values}]
+                         [:in [:resource#>> [:assignee :id]] [:pg/params-list vs]])
+                 :not  (fn [{vs :not}]
+                         [:or
+                          [:is [:resource#>> [:assignee :id]] nil]
+                          [:not [:in [:resource#>> [:assignee :id]] [:pg/params-list vs]]]])
+                 :some (fn [v] [:is-not [:resource#>> [:assignee :id]] nil])
+                 :none (fn [v] [:is [:resource#>> [:assignee :id]] nil])}
+
+   :ins {:some (fn [v] [:is-not [:resource#>> [:coverages :primary]] nil])
+         :none (fn [v] [:is [:resource#>> [:coverages :primary]] nil])
+         :else (fn [v]
+                 (let [value (first (:values v))]
+                   (cond
+                     (re-matches #"\d+" value) [:or [:= [:pg/param value] [:pg/sql "((knife_extract_text(resource, '[[\"coverages\",\"primary\",\"resource\",\"plan\",\"identifier\",{\"system\": \"amd\"},\"value\"]]'))[1])"]]
+                                                [:ilike [:pg/param value] [:jsonb/#>> :resource [:coverages :primary :resource :plan :id]]]]
+                     (= "!some" value) [:is-not [:jsonb/#>> :resource [:coverages :primary :resource :eligible]] nil]
+                     (= "!succ" value) [:= [:pg/param true] [:pg/sql "(resource#>'{coverages,primary,resource,eligible}')::bool"]]
+                     (= "!fail" value) [:= [:pg/param false] [:pg/sql "(resource#>'{coverages,primary,resource,eligible}')::bool"]]
+                     (= "!none" value) [:is [:jsonb/#>> :resource [:coverages :primary :resource :eligible]] nil]
+                     :else [:or [:ilike [:resource#>> [:coverages :primary :resource :plan :display]] [:pg/param (str "%" value "%")]]
+                                [:ilike [:pg/param value] [:jsonb/#>> :resource [:coverages :primary :resource :plan :id]]]])))}
+
+
+   :ins2 {:some (fn [v] [:is-not [:resource#>> [:coverages :secondary]] nil])
+          :none (fn [v] [:is [:resource#>> [:coverages :secondary]] nil])
+          :else (fn [v]
+                  (let [value (first (:values v))]
+                    (cond
+                      (re-matches #"\d+" value) [:= [:pg/param value] [:pg/sql "((knife_extract_text(resource, '[[\"coverages\",\"secondary\",\"resource\",\"plan\",\"identifier\",{\"system\": \"amd\"},\"value\"]]'))[1])"]]
+                      (= "!some" value) [:is-not [:jsonb/#>> :resource [:coverages :secondary :resource :eligible]] nil]
+                      (= "!succ" value) [:= [:pg/param true] [:pg/sql "(resource#>'{coverages,secondary,resource,eligible}')::bool"]]
+                      (= "!fail" value) [:= [:pg/param false] [:pg/sql "(resource#>'{coverages,secondary,resource,eligible}')::bool"]]
+                      (= "!none" value) [:is [:jsonb/#>> :resource [:coverages :secondary :resource :eligible]] nil]
+                      :else [:ilike [:resource#>> [:coverages :secondary :resource :plan :display]] [:pg/param (str "%" value "%")]])))}
+
+   :problems {:else (fn [{v :values}]
+                      (cond
+                        (= "availity" (first v))
+                        [:pg/sql "((knife_extract_text((select h.resource from healthplan h where h.id = billingcase.resource#>>'{coverages,primary,resource,plan,id}'),
+                           '[[\"identifier\",{\"system\": \"availity\"},\"value\"]]'))[1]) is null and  billingcase.resource#>>'{coverages,primary,resource,plan,id}' is not null"]
+                        (= "npi" (first v))
+                        [:pg/sql "(select p.resource#>>'{usnpi, status}' from practitioner p where id = billingcase.resource#>>'{referring_provider, id}') = 'invalid'"]
+                        ))}
+
+   :coding {:some (fn [v] [:is-not [:jsonb/#>> :resource [:coding]] nil])
+            :none (fn [v] [:is [:jsonb/#>> :resource [:coding]] nil])}})
 
 (defn uuid []
   (str (java.util.UUID/randomUUID)))
@@ -140,11 +272,25 @@
   (fn [{:keys [params] :as request}]
     (try
       (if-let [id (:id params)]
-        (let [q-result (db/query-first {:select [:*]
-                                        :from [:meteo_data]
-                                        :where [:=
-                                                :id
-                                                id]} connection)]
+        (let [filter (app.filters/parse-filter (:q params))
+              where (->> filter
+                         (reduce (fn [acc [k v]]
+                                   (if-let [flt (when-let [f (get filters k)]
+                                                  (cond (:none v) (:none f)
+                                                        (:range v) (:range f)
+                                                        (:not-in-range v)
+                                                        (:not-in-range f)
+                                                        (:some v) (:some f)
+                                                        (:not v) (:not f)
+                                                        :else (:else f)))]
+                                     (assoc acc k (flt v))
+                                     acc)) {}))
+              query {:select [:*]
+                     :from [:meteo_data]
+                     :where [:=
+                             :id
+                             id]}
+              q-result (db/query-first query connection)]
 
           (if (nil? q-result)
             {:status 404

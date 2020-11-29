@@ -3,6 +3,7 @@
             [reagent.core  :as r]))
 
 (defn text-input [form-path path & [attrs]]
+  (prn attrs)
   (let [node (rf/subscribe [:zf/node form-path path])
         attrs (assoc attrs :on-change #(rf/dispatch [:zf/set-value form-path path (.. % -target -value)]))]
     (fn [& _]

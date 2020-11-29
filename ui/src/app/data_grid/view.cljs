@@ -15,7 +15,10 @@
    [:.tab:hover
     {:background-color "#f7fafc"}]
    [:.tab-active
-    {:background-color "#f7fafc"}]
+    {:background-color "white!important"
+     :height "26px!important"
+     :border-bottom "none!important"
+     :border-radius ".25rem .25rem 0 0 !important"}]
    [:.grid-record:hover
     {:background-color "#f7fafc"}]))
 
@@ -72,7 +75,6 @@
                    :path [:date_ts]}])]
    [:div.btn.btn-primary.mt-5.pointer {:on-click #(rf/dispatch [::model/send-data current-tab])}
     "Create record"]])
-
 (defn modal-file [current-tab]
   [:<>
    [:div.row.m-4
@@ -96,22 +98,28 @@
 (defn meteo-data-grid [data]
   (fn [data]
     [:div.container grid-styles
-     [:div.row.d-flex.justify-content-around
-      [:div.col-4.border-top.border-right.border-left.rounded.text-center.block
+     [:div.row.position-relative
+      {:style {:height "25px"}}
+      [:div.col-4.border-top.border-right.border-left.border-bottom.rounded.text-center.block.position-absolute.bg-light
        {:class (if (= :meteo (:current-tab data))
                  "tab-active"
                  "tab pointer")
+        :style {:left "15%"}
         :on-click (fn [e]
                     (rf/dispatch [::model/switch-tab :meteo]))}
        "Meteorological data"]
-      [:div.col-4.border-top.border-right.border-left.rounded.text-center.block
+      [:div.col-4.border-top.border-right.border-left.border-bottom.rounded.text-center.block.position-absolute.bg-light
        {:class (if (= :sensor (:current-tab data))
                  "tab-active"
                  "tab pointer")
+        :style {:left "53%"}
         :on-click (fn [e]
                     (rf/dispatch [::model/switch-tab :sensor]))}
        "Sensor data"]]
      [:div.border.rounded-top.p-3.block
+      [:div.pb-3.d-flex.align-items-baseline
+       [inputs/text-input [:form :search]]
+       [:button.btn.btn-primary.ml-1 {:on-click #(rf/dispatch [::model/search])} "Search"]]
       [:div.container
        (if (-> data :file-upload :uploading?)
          [:button.btn.btn-primary.p-1.mb-2.mr-3 {:type "button"

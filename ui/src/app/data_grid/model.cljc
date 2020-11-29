@@ -137,6 +137,14 @@
                 :method "DELETE"}
     :dispatch  [:flash/success {:msg (str "Record " id " has been removed!")}]}))
 
+(rf/reg-event-fx
+ ::search
+ (fn [{db :db} [_ value]]
+   {:dispatch [:zframes.redirect/merge-params {:q "SASS"}]}
+   #_{:dispatch-debounce {:delay 1000
+                        :key   ::zframes-redirect-merge-params
+                        :event [:zframes.routing/merge-params {:q value}]}}))
+
 (rf/reg-sub
  index
  (fn [db]

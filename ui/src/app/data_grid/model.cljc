@@ -6,7 +6,7 @@
 
 (rf/reg-event-fx
  ::retrieve-data-list
- (fn [{db :db} [_ {:keys [page data-type]}]]
+ (fn [{db :db} [_ {:keys [page data-type q]}]]
    (let [uri (cond
                (= data-type :meteo)
                "/meteorological-data"
@@ -17,7 +17,8 @@
                :else
                "/meteorological-data")]
      {:xhr/fetch {:uri uri
-                  :params  {:page (or page 1)}
+                  :params  {:page (or page 1)
+                            :q q}
                   :success {:event ::show-data}}})))
 
 (rf/reg-event-fx
@@ -102,17 +103,20 @@
 
 (rf/reg-event-fx
  index
- (fn [{db :db} [pid phase params]]
+ (fn [{db :db} [pid phase {params :params}]]
    (cond
      (= phase :deinit)
      {}
-     (or params (= phase :init))
-     {:dispatch-n [[::retrieve-data-list {:page (-> params
-                                                    :params
-                                                    :page)}]
+     (= phase :init)
+     {:dispatch-n [[::retrieve-data-list {:page (:page params)
+                                          :q    (:q params)}]
                    [::form/init]
                    [::init-file-modal]]
-      :db (assoc-in db [index :current-tab] :meteo)})))
+      :db (assoc-in db [index :current-tab] :meteo)}
+     (= phase :params)
+     {:dispatch [::retrieve-data-list {:page (:page params)
+                                       :q    (:q params)
+                                       :data-type (get-in db [index :current-tab])}]})))
 
 (rf/reg-event-fx
  ::switch-tab
@@ -139,8 +143,8 @@
 
 (rf/reg-event-fx
  ::search
- (fn [{db :db} [_ value]]
-   {:dispatch [:zframes.redirect/merge-params {:q "SASS"}]}
+ (fn [{db :db} _]
+   {:dispatch [:zframes.redirect/merge-params {:q (get-in db [:form :search :value])}]}
    #_{:dispatch-debounce {:delay 1000
                         :key   ::zframes-redirect-merge-params
                         :event [:zframes.routing/merge-params {:q value}]}}))

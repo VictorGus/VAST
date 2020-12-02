@@ -3,6 +3,7 @@
    [dk.ative.docjure.spreadsheet :refer [select-columns select-sheet read-cell
                                          load-workbook row-seq cell-seq]]
    [clojure.data.csv :as csv]
+   [dsql.pg :as dsql]
    [app.dbcore :as db]
    [app.filters]
    [honeysql.core :as hsql]
@@ -21,11 +22,11 @@
             :sheet   "Sheet1"}})
 
 (def filters
-  {:date {:none (fn [v] [:is [:resource->> :date] nil])
-          :some (fn [v] [:is-not [:resource->> :date] nil])
-          :not  (fn [v] [:not-in [:pg/coalesce [:pg/cast [:resource->> :date] :date] "1900-01-01"]
+  {:date {:none (fn [v] [:is :date_ts nil])
+          :some (fn [v] [:is-not :date_ts nil])
+          :not  (fn [v] [:not-in [:pg/coalesce [:pg/sql "(date_ts - interval '3 hours')::date::text"] "1900-01-01"]
                          [:pg/params-list (:not v)]])
-          :else (fn [v] [:in [:pg/cast [:resource->> :date] :date] [:pg/params-list (:values v)]])}
+          :else (fn [v] [:in [:pg/sql "(date_ts - interval '3 hours')::date::text"] [:pg/params-list (:values v)]])}
 
    :status {:none (fn [v] [:is [:resource->> :status] nil])
             :some (fn [v] [:is-not [:resource->> :status] nil])
@@ -272,6 +273,16 @@
   (fn [{:keys [params] :as request}]
     (try
       (if-let [id (:id params)]
+        (let [query {:select [:*]
+                     :from [:meteo_data]
+                     :where [:= :id id]}
+              q-result (db/query-first query connection)]
+          (if (nil? q-result)
+            {:status 404
+             :body {:message "Not found"}}
+            {:status 200
+             :body q-result}))
+
         (let [filter (app.filters/parse-filter (:q params))
               where (->> filter
                          (reduce (fn [acc [k v]]
@@ -285,24 +296,25 @@
                                                         :else (:else f)))]
                                      (assoc acc k (flt v))
                                      acc)) {}))
-              query {:select [:*]
-                     :from [:meteo_data]
-                     :where [:=
-                             :id
-                             id]}
-              q-result (db/query-first query connection)]
-
-          (if (nil? q-result)
-            {:status 404
-             :body {:message "Not found"}}
-            {:status 200
-             :body q-result}))
-        (let [records-count (-> {:select [:%count.*]
+              ;; _ (prn where)
+              records-count (-> {:select [:%count.*]
                                  :from [:meteo_data]}
                                 (db/query-first connection)
                                 :count)
-              q-result      (db/query (cond-> {:select [:*]
-                                               :from [:meteo_data]}
+              ;; _ (prn "AAAA" (dsql/format (cond-> {:ql/type :pg/select
+              ;;                                     :select :*
+              ;;                                     :from :meteo_data
+              ;;                                     :where where
+              ;;                                     }
+              ;;                              (:page params)
+              ;;                              (assoc :offset (* (- (Integer/parseInt (:page params)) 1)
+              ;;                                                100)
+              ;;                                   :limit  100))))
+              q-result      (db/query (cond-> {:ql/type :pg/select
+                                               :select :*
+                                               :from :meteo_data
+                                               :where where
+                                               }
                                         (:page params)
                                         (assoc :offset (* (- (Integer/parseInt (:page params)) 1)
                                                           100)

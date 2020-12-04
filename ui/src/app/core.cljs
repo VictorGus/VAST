@@ -9,7 +9,8 @@
             [app.routes :as routes]
             [app.pages :as pages]
             [app.layout :as layout]
-            [app.data-grid.view]))
+            [app.data-grid.view]
+            [app.map.view]))
 
 (rf/reg-event-fx
  ::initialize

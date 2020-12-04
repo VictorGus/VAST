@@ -43,7 +43,7 @@
              } dev-ctx)
 
   (db/query ["SELECT * FROM meteo_data WHERE (date_ts - interval '3 hours')::date::text IN ( ? ) LIMIT 100 OFFSET 0" "2016-03-31"]
-   ["SELECT * FROM meteo_data WHERE /*date*/ (date_ts - interval '3 hours')::date::text IN ( ? ) LIMIT 100 OFFSET 0" "2020-03-31"]
+   #_["SELECT * FROM meteo_data WHERE /*date*/ (date_ts - interval '3 hours')::date::text IN ( ? ) LIMIT 100 OFFSET 0" "2020-03-31"]
             dev-ctx)
 
 ;; => ({:date_ts #inst "2016-03-31T21:00:00.000-00:00"})
@@ -66,7 +66,7 @@
 
   (dsql/format
    {:ql/type :pg/select
-    :select :direction
+    :select ^:pg/fn[:lower :direction]
     :from :meteo_data
     :where [:= :direction [:pg/param "327"]]
     :offset 100

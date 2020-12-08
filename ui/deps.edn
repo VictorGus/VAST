@@ -14,6 +14,7 @@
          cljsjs/moment             {:mvn/version "2.17.1-1"}
          cljsjs/moment-timezone    {:mvn/version "0.5.11-1"}
          zenform                   {:local/root "zenform"}
+         hiccups                   {:mvn/version "0.3.0"}
          hiccup                    {:mvn/version "1.0.5"}
          garden                    {:mvn/version "1.3.5"}
          chrono                    {:local/root "../src/chrono"}

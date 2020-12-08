@@ -265,6 +265,60 @@
         {:status 500
          :body (str e)}))))
 
+(defn retrieve-factories [{connection :db/connection :as ctx}]
+  (fn [{:keys [params] :as request}]
+    (try
+      (if-let [id (:id params)]
+        (let [query {:select [:*]
+                     :from [:factory]
+                     :where [:= :id id]}
+              q-result (db/query-first query connection)]
+          (if (nil? q-result)
+            {:status 404
+             :body {:message "Not found"}}
+            {:status 200
+             :body q-result}))
+        (let [records-count (-> {:select [:%count.*]
+                                 :from [:factory]}
+                                (db/query-first connection)
+                                :count)
+              q-result      (db/query {:ql/type :pg/select
+                                       :select :*
+                                       :from :factory} connection)]
+          {:status 200
+           :body  {:total records-count
+                   :entry {:data q-result}}}))
+      (catch Exception e
+        {:status 500
+         :body (str e)}))))
+
+(defn retrieve-monitors [{connection :db/connection :as ctx}]
+  (fn [{:keys [params] :as request}]
+    (try
+      (if-let [id (:id params)]
+        (let [query {:select [:*]
+                     :from [:monitor]
+                     :where [:= :id id]}
+              q-result (db/query-first query connection)]
+          (if (nil? q-result)
+            {:status 404
+             :body {:message "Not found"}}
+            {:status 200
+             :body q-result}))
+        (let [records-count (-> {:select [:%count.*]
+                                 :from [:monitor]}
+                                (db/query-first connection)
+                                :count)
+              q-result      (db/query {:ql/type :pg/select
+                                       :select :*
+                                       :from :monitor} connection)]
+          {:status 200
+           :body  {:total records-count
+                   :entry {:data q-result}}}))
+      (catch Exception e
+        {:status 500
+         :body (str e)}))))
+
 (defn delete-meteorological-data [{connection :db/connection :as ctx}]
   (fn [{:keys [params] :as request}]
     (try

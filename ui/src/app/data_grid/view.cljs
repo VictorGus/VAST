@@ -100,26 +100,43 @@
     [:div.container grid-styles
      [:div.row.position-relative
       {:style {:height "25px"}}
-      [:div.col-4.border-top.border-right.border-left.border-bottom.rounded.text-center.block.position-absolute.bg-light
+      [:div.col-2.border-top.border-right.border-left.border-bottom.rounded.text-center.bg-light
        {:class (if (= :meteo (:current-tab data))
                  "tab-active"
                  "tab pointer")
-        :style {:left "15%"}
+        :style {:margin-left "8.5%"}
         :on-click (fn [e]
                     (rf/dispatch [::model/switch-tab :meteo]))}
        "Meteorological data"]
-      [:div.col-4.border-top.border-right.border-left.border-bottom.rounded.text-center.block.position-absolute.bg-light
+      [:div.col-2.border-top.border-right.border-left.border-bottom.rounded.text-center.bg-light
        {:class (if (= :sensor (:current-tab data))
                  "tab-active"
                  "tab pointer")
-        :style {:left "53%"}
+        :style {:margin-left "5%"}
         :on-click (fn [e]
                     (rf/dispatch [::model/switch-tab :sensor]))}
-       "Sensor data"]]
+       "Sensor data"]
+      [:div.col-2.border-top.border-right.border-left.border-bottom.rounded.text-center.bg-light
+       {:class (if (= :factory (:current-tab data))
+                 "tab-active"
+                 "tab pointer")
+        :style {:margin-left "5%"}
+        :on-click (fn [e]
+                    (rf/dispatch [::model/switch-tab :factory]))}
+       "Factories"]
+      [:div.col-2.border-top.border-right.border-left.border-bottom.rounded.text-center.bg-light
+       {:class (if (= :monitor (:current-tab data))
+                 "tab-active"
+                 "tab pointer")
+        :style {:margin-left "5%"}
+        :on-click (fn [e]
+                    (rf/dispatch [::model/switch-tab :monitor]))}
+       "Monitors"]]
      [:div.border.rounded-top.p-3.block
-      [:div.pb-3.d-flex.align-items-baseline
-       [inputs/text-input [:form :search]]
-       [:button.btn.btn-primary.ml-1 {:on-click #(rf/dispatch [::model/search])} "Search"]]
+      (when (#{:sensor :meteo} (:current-tab data))
+        [:div.pb-3.d-flex.align-items-baseline
+         [inputs/text-input [:form :search]]
+         [:button.btn.btn-primary.ml-1 {:on-click #(rf/dispatch [::model/search])} "Search"]])
       [:div.container
        (if (-> data :file-upload :uploading?)
          [:button.btn.btn-primary.p-1.mb-2.mr-3 {:type "button"
@@ -143,19 +160,48 @@
         [:span.font-weight-bold.ml-1 "Add new record"]]
        [:div.row.border-top.border-bottom.rounded-top
         [:div.col-5.p-2.border-left
-         [:p.font-weight-bold.text-center "DateTime"]]
+         [:p.font-weight-bold.text-center (cond
+                                            (#{:meteo :sensor} (:current-tab data))
+                                            "DateTime"
+
+                                            (= :factory (:current-tab data))
+                                            "Factory name"
+
+                                            :else
+                                            "Identification number")]]
         [:div.text-center.col-3.p-2
-         [:p.font-weight-bold.text-center (if (= :meteo (:current-tab data))
+         [:p.font-weight-bold.text-center (cond
+                                            (= :meteo (:current-tab data))
                                             "Wind direction"
-                                            "Chemical")]]
+
+                                            (= :sensor (:current-tab data))
+                                            "Chemical"
+
+                                            :else
+                                            "Latitude"
+
+                                            )]]
         [:div.text-center.col-2.p-2
-         [:p.font-weight-bold.text-center (if (= :meteo (:current-tab data))
+         [:p.font-weight-bold.text-center (cond
+                                            (= :meteo (:current-tab data))
                                             "Wind speed"
-                                            "Monitor")]]
+
+                                            (= :sensor (:current-tab data))
+                                            "Monitor"
+
+                                            :else
+                                            "Longitude"
+                                            )]]
         [:div.text-center.col-2.p-2.border-right
-         [:p.font-weight-bold.text-center (if (= :meteo (:current-tab data))
+         [:p.font-weight-bold.text-center (cond
+                                            (= :meteo (:current-tab data))
                                             "Elevation"
-                                            "Reading")]]]
+
+                                            (= :sensor (:current-tab data))
+                                            "Reading"
+
+                                            (= :factory (:current-tab data))
+                                            "Description")]]]
        (for [el (:data data)]
          [:div.grid-record.row
           [:div.col-5.p-2.border-left.border-bottom

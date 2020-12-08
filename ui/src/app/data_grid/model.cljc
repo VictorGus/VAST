@@ -14,6 +14,12 @@
                (= data-type :sensor)
                "/sensor-data"
 
+               (= data-type :factory)
+               "/factory"
+
+               (= data-type :monitor)
+               "/monitor"
+
                :else
                "/meteorological-data")]
      {:xhr/fetch {:uri uri
@@ -126,7 +132,13 @@
      (assoc :db (assoc-in db [index :current-tab] :meteo))
 
      (= :sensor data-type)
-     (assoc :db (assoc-in db [index :current-tab] :sensor)))))
+     (assoc :db (assoc-in db [index :current-tab] :sensor))
+
+     (= :monitor data-type)
+     (assoc :db (assoc-in db [index :current-tab] :monitor))
+
+     (= :factory data-type)
+     (assoc :db (assoc-in db [index :current-tab] :factory)))))
 
 (rf/reg-event-fx
  ::show-data

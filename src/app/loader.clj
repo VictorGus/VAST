@@ -306,6 +306,22 @@
           {:status 500
            :body (str e)})))))
 
+(defn load-monitor [{connection :db/connection :as ctx}]
+  (fn [{:keys [body] :as request}]
+    (let [body (clojure.walk/keywordize-keys body)]
+      (try
+        (if (:id body)
+          (do
+            (db/execute {:insert-into :monitor
+                         :values [(select-keys body [:id :longitude :latitude])]} connection)
+            {:body body
+             :status 201})
+          {:status 400
+           :body {:message "Id for monitor is not provided"}})
+        (catch Exception e
+          {:status 500
+           :body (str e)})))))
+
 (defn retrieve-monitors [{connection :db/connection :as ctx}]
   (fn [{:keys [params] :as request}]
     (try
@@ -337,6 +353,20 @@
   (fn [{:keys [params] :as request}]
     (try
       (let [q-result (db/execute {:delete-from :factory
+                                  :where [:= :id (:id params)]} connection)]
+        (if (> q-result 0)
+          {:status 200
+           :body {:message "ok"}}
+          {:status 404
+           :body {:message "Not found"}}))
+      (catch Exception e
+        {:status 500
+         :body (str e)}))))
+
+(defn delete-monitor [{connection :db/connection :as ctx}]
+  (fn [{:keys [params] :as request}]
+    (try
+      (let [q-result (db/execute {:delete-from :monitor
                                   :where [:= :id (:id params)]} connection)]
         (if (> q-result 0)
           {:status 200

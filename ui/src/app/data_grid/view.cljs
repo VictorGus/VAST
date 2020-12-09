@@ -90,7 +90,21 @@
                   {:label "Description"
                    :type :text
                    :form-path form/form-path-factory
-                   :path [:description]}])]
+                   :path [:description]}]
+
+                 (= :monitor current-tab)
+                 [{:label "Identification number"
+                   :type :text
+                   :form-path form/form-path-monitor
+                   :path [:id]}
+                  {:label "Longitude"
+                   :type :text
+                   :form-path form/form-path-monitor
+                   :path [:longitude]}
+                  {:label "Latitude"
+                   :type :text
+                   :form-path form/form-path-monitor
+                   :path [:latitude]}])]
    [:div.btn.btn-primary.mt-5.pointer {:on-click #(rf/dispatch [::model/send-data current-tab])}
     "Create record"]])
 (defn modal-file [current-tab]

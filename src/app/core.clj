@@ -31,9 +31,8 @@
                           :POST (app.loader/load-factory ctx)
                           :GET  (app.loader/retrieve-factories ctx)}
    "monitor"            {"$bulk" {:POST   (app.loader/bulk-load-sensor-data ctx)}
-                         [:id]   {:GET    (app.loader/retrieve-sensor-data ctx)
-                                  :DELETE (app.loader/delete-sensor-data ctx)}
-                         :POST (app.loader/load-sensor-data ctx)
+                         [:id]   {:DELETE (app.loader/delete-monitor ctx)}
+                         :POST (app.loader/load-monitor ctx)
                          :GET  (app.loader/retrieve-monitors ctx)}
    })
 

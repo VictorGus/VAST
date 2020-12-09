@@ -50,6 +50,12 @@
                (= current-tab :sensor)
                "/sensor-data/$bulk"
 
+               (= current-tab :factory)
+               "/factory/$bulk"
+
+               (= current-tab :monitor)
+               "/monitor/$bulk"
+
                :else
                "/meteorological-data/$bulk")]
      {:db (-> db

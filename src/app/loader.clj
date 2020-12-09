@@ -9,16 +9,25 @@
    [clojure.java.io :as io]))
 
 (def xl-sheets
-  {:meteo  {:columns {:A :date
-                      :B :wind-direction
-                      :C :wind-speed
-                      :D :elevation}
-            :sheet   "Sheet1"}
-   :sensor {:columns {:A :chemical
-                      :B :monitor
-                      :C :date
-                      :D :reading}
-            :sheet   "Sheet1"}})
+  {:meteo   {:columns {:A :date
+                       :B :wind-direction
+                       :C :wind-speed
+                       :D :elevation}
+             :sheet   "Sheet1"}
+   :sensor  {:columns {:A :chemical
+                       :B :monitor
+                       :C :date
+                       :D :reading}
+             :sheet   "Sheet1"}
+   :factory {:columns {:A :factory_name
+                       :B :longitude
+                       :C :latitude
+                       :D :description}
+             :sheet   "Sheet1"}
+   :monitor {:columns {:A :id
+                       :B :longitude
+                       :C :latitude}
+             :sheet   "Sheet1"}})
 
 (def meteo-filters
   {:date {:none (fn [v] [:is :date_ts nil])
@@ -291,6 +300,67 @@
       (catch Exception e
         {:status 500
          :body (str e)}))))
+
+(defn bulk-load-factory [{{:keys [working-dir]} :app
+                          connection :db/connection :as ctx}]
+  (fn [{:keys [body headers params] :as request}]
+    (if (= (get headers "content-type") "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      (try
+        (let [{{:keys [columns sheet]} :factory} xl-sheets
+              xls-sheet (->> body load-workbook
+                             (select-sheet sheet))
+              data      (select-columns columns xls-sheet)]
+
+          (when (:overwrite params)
+            (db/execute {:truncate :factory} connection))
+
+          (db/insert-multi connection
+                           :factory
+                           [:id :factory_name :longitude :latitude :description]
+                           (map #(as-> % el
+                                   (vals el)
+                                   (map (fn [e]
+                                          (if (nil? e)
+                                            "unknown"
+                                            e)) el)
+                                   (cons (uuid) el)) (drop 1 data)))
+          {:body {:message (str (count data) " records have been loaded")}
+           :status 201})
+        (catch Exception e
+          {:status 500
+           :body (str e)}))
+      {:status 415
+       :body {:message "Not supported type of request body"}})))
+
+(defn bulk-load-monitor [{{:keys [working-dir]} :app
+                          connection :db/connection :as ctx}]
+  (fn [{:keys [body headers params] :as request}]
+    (if (= (get headers "content-type") "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      (try
+        (let [{{:keys [columns sheet]} :monitor} xl-sheets
+              xls-sheet (->> body load-workbook
+                             (select-sheet sheet))
+              data      (select-columns columns xls-sheet)]
+
+          (when (:overwrite params)
+            (db/execute {:truncate :monitor} connection))
+
+          (db/insert-multi connection
+                           :monitor
+                           [:id :longitude :latitude]
+                           (map #(as-> % el
+                                   (vals el)
+                                   (map (fn [e]
+                                          (if (nil? e)
+                                            "unknown"
+                                            e)) el)) (drop 1 data)))
+          {:body {:message (str (count data) " records have been loaded")}
+           :status 201})
+        (catch Exception e
+          {:status 500
+           :body (str e)}))
+      {:status 415
+       :body {:message "Not supported type of request body"}})))
 
 (defn load-factory [{connection :db/connection :as ctx}]
   (fn [{:keys [body] :as request}]

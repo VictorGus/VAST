@@ -6,8 +6,9 @@
 
 (rf/reg-event-fx
  ::retrieve-data-list
- (fn [{db :db} [_ {:keys [page data-type q]}]]
-   (let [uri (cond
+ (fn [{db :db} [_ {:keys [page q]}]]
+   (let [data-type (get-in db [index :current-tab])
+         uri (cond
                (= data-type :meteo)
                "/meteorological-data"
 
@@ -86,6 +87,7 @@
  ::success-send
  (fn [{db :db} _]
    {:dispatch-n [[:flash/success {:msg "Record has been created"}]
+                 [::retrieve-data-list]
                  [::form/init]]
     :db (dissoc db :modal)}))
 
@@ -98,6 +100,12 @@
 
                (= current-tab :sensor)
                "/sensor-data"
+
+               (= current-tab :factory)
+               "/factory"
+
+               (= current-tab :monitor)
+               "/monitor"
 
                :else
                "/meteorological-data")
@@ -147,11 +155,24 @@
 
 (rf/reg-event-fx
  ::delete-record
- (fn [{db :db} [_ {:keys [id type]}]]
-   {:xhr/fetch {:uri (str "/" (name type) "/" id)
-                :success {:event ::retrieve-data-list}
-                :method "DELETE"}
-    :dispatch  [:flash/success {:msg (str "Record " id " has been removed!")}]}))
+ (fn [{db :db} [_ {:keys [id]}]]
+   (let [current-tab (get-in db [index :current-tab])
+         rt (cond
+              (= :meteo current-tab)
+              "meteorological-data"
+
+              (= :sensor current-tab)
+              "sensor-data"
+
+              (= :factory current-tab)
+              "factory"
+
+              (= :monitor current-tab)
+              "monitor")]
+     {:xhr/fetch {:uri (str "/" rt "/" id)
+                  :success {:event ::retrieve-data-list}
+                  :method "DELETE"}
+      :dispatch  [:flash/success {:msg (str "Record " id " has been removed!")}]})))
 
 (rf/reg-event-fx
  ::search

@@ -3,9 +3,11 @@
             [zenform.model      :as zf]
             [zenform.validators :as validators]))
 
-(def form-path-meteo  [:form :modal :meteo])
+(def form-path-meteo    [:form :modal :meteo])
 
-(def form-path-sensor [:form :modal :sensor])
+(def form-path-sensor   [:form :modal :sensor])
+
+(def form-path-factory [:form :modal :factory])
 
 (def form-schema-meteo
   {:type :form
@@ -21,14 +23,23 @@
             :elevation       {:type :string}
             :date_ts         {:type :string}}})
 
-(def schema-dict {:meteo  form-schema-meteo
-                  :sensor form-schema-sensor})
+(def form-schema-factory
+  {:type :form
+   :fields {:factory_name {:type :string}
+            :longitude    {:type :string}
+            :latitude     {:type :string}
+            :description  {:type :string}}})
+
+(def schema-dict {:meteo  form-path-meteo
+                  :sensor form-path-sensor
+                  :factory form-path-factory})
 
 (rf/reg-event-fx
  ::init
  (fn [{db :db} [_ {:keys [resource]}]]
-   {:dispatch-n [[:zf/init form-path-meteo form-schema-meteo resource]
-                 [:zf/init form-path-sensor form-schema-sensor resource]]}))
+   {:dispatch-n [[:zf/init form-path-meteo    form-schema-meteo    resource]
+                 [:zf/init form-path-sensor   form-schema-sensor   resource]
+                 [:zf/init form-path-factory form-schema-factory resource]]}))
 
 (defn eval-form [db current-tab]
   (let [{:keys [errors form value]} (->> (current-tab schema-dict) (get-in db) zf/eval-form)
@@ -36,13 +47,13 @@
               (fn [acc k v]
                 (cond
                   (= :date_ts k)
-                  (assoc acc k (str (clojure.string/replace (:value v) "T" " ") ":00"))
+                  (assoc acc k (str (clojure.string/replace v "T" " ") ":00"))
 
                   :else
-                  (assoc acc k (:value v))))
+                  (assoc acc k v)))
               {}
               value)]
-    (println data)
+    (println value)
     data))
 
 

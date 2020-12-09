@@ -72,7 +72,25 @@
                   {:label "Date"
                    :type :date
                    :form-path form/form-path-sensor
-                   :path [:date_ts]}])]
+                   :path [:date_ts]}]
+
+                 (= :factory current-tab)
+                 [{:label "Factory name"
+                   :type :text
+                   :form-path form/form-path-factory
+                   :path [:factory_name]}
+                  {:label "Longitude"
+                   :type :text
+                   :form-path form/form-path-factory
+                   :path [:longitude]}
+                  {:label "Latitude"
+                   :type :text
+                   :form-path form/form-path-factory
+                   :path [:latitude]}
+                  {:label "Description"
+                   :type :text
+                   :form-path form/form-path-factory
+                   :path [:description]}])]
    [:div.btn.btn-primary.mt-5.pointer {:on-click #(rf/dispatch [::model/send-data current-tab])}
     "Create record"]])
 (defn modal-file [current-tab]
@@ -205,15 +223,28 @@
        (for [el (:data data)]
          [:div.grid-record.row
           [:div.col-5.p-2.border-left.border-bottom
-           [:p.text-center (:date_ts el)]]
+           [:p.text-center (or (:date_ts el) (:factory_name el) (:id el))]]
           [:div.col-3.p-2.border-bottom
-           [:p.text-center (if (= :meteo (:current-tab data))
+           [:p.text-center (cond
+                             (= :meteo (:current-tab data))
                              (:direction el)
-                             (:chemical el))]]
+
+                             (= :sensor (:current-tab data))
+                             (:chemical el)
+
+                             (#{:monitor :factory} (:current-tab data))
+                             (:latitude el)
+                             )]]
           [:div.col-2.p-2.border-bottom
-           [:p.text-center (if (= :meteo (:current-tab data))
+           [:p.text-center (cond
+                             (= :meteo (:current-tab data))
                              (:speed el)
-                             (:monitor el))]]
+
+                             (= :sensor (:current-tab data))
+                             (:monitor el)
+
+                             (#{:monitor :factory} (:current-tab data))
+                             (:longitude el))]]
           [:div.col-2.p-2.border-right.border-bottom.position-relative
            [:i.far.fa-trash-alt.position-absolute.float-right.pointer {:style {:right 0
                                                                                :top 0
@@ -222,12 +253,17 @@
                                                                                :font-size "15px"}
                                                                        :on-click (fn [e]
                                                                                    (rf/dispatch [::model/delete-record
-                                                                                                 {:id (:id el)
-                                                                                                  :type :meteorological-data}]))}]
-           [:p.text-center (if (= :meteo (:current-tab data))
+                                                                                                 {:id (:id el)}]))}]
+           [:p.text-center (cond
+                             (= :meteo (:current-tab data))
                              (:elevation el)
+
+                             (= :sensor (:current-tab data))
                              (some-> (:reading el)
-                                     (.substring 0 7)))]]])
+                                     (.substring 0 7))
+
+                             (= :factory (:current-tab data))
+                             (:description el))]]])
        [:nav.mt-3
         [:ul.pagination
          [:li.page-item

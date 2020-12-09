@@ -27,10 +27,8 @@
                                    :DELETE (app.loader/delete-sensor-data ctx)}
                           :POST (app.loader/load-sensor-data ctx)
                           :GET  (app.loader/retrieve-sensor-data ctx)}
-   "factory"            {"$bulk" {:POST   (app.loader/bulk-load-sensor-data ctx)}
-                          [:id]   {:GET    (app.loader/retrieve-sensor-data ctx)
-                                   :DELETE (app.loader/delete-sensor-data ctx)}
-                          :POST (app.loader/load-sensor-data ctx)
+   "factory"            {[:id]   {:DELETE (app.loader/delete-factory ctx)}
+                          :POST (app.loader/load-factory ctx)
                           :GET  (app.loader/retrieve-factories ctx)}
    "monitor"            {"$bulk" {:POST   (app.loader/bulk-load-sensor-data ctx)}
                          [:id]   {:GET    (app.loader/retrieve-sensor-data ctx)

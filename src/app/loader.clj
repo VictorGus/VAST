@@ -292,6 +292,20 @@
         {:status 500
          :body (str e)}))))
 
+(defn load-factory [{connection :db/connection :as ctx}]
+  (fn [{:keys [body] :as request}]
+    (let [body (clojure.walk/keywordize-keys body)]
+      (try
+        (db/execute {:insert-into :factory
+                     :values [(merge {:id (uuid)}
+                                     (select-keys body [:factory_name :longitude
+                                                        :latitude :description]))]} connection)
+        {:body body
+         :status 201}
+        (catch Exception e
+          {:status 500
+           :body (str e)})))))
+
 (defn retrieve-monitors [{connection :db/connection :as ctx}]
   (fn [{:keys [params] :as request}]
     (try
@@ -315,6 +329,20 @@
           {:status 200
            :body  {:total records-count
                    :entry {:data q-result}}}))
+      (catch Exception e
+        {:status 500
+         :body (str e)}))))
+
+(defn delete-factory [{connection :db/connection :as ctx}]
+  (fn [{:keys [params] :as request}]
+    (try
+      (let [q-result (db/execute {:delete-from :factory
+                                  :where [:= :id (:id params)]} connection)]
+        (if (> q-result 0)
+          {:status 200
+           :body {:message "ok"}}
+          {:status 404
+           :body {:message "Not found"}}))
       (catch Exception e
         {:status 500
          :body (str e)}))))

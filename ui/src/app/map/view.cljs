@@ -51,7 +51,15 @@
     :reagent-render
     (fn [data]
       [:div.container
-       [:div#container {:style {:min-height "500px"}}]])}))
+       [:div#container {:style {:min-height "500px"}}]
+       [:span
+        [:i.fas.fa-circle {:style {:color "#ff7f0e"}}]
+        " - factories"]
+       [:span.ml-5
+        [:i.fas.fa-circle {:style {:color "#3f8c07"
+                                   :font-size "10px"}}]
+        " - monitors"]
+       ])}))
 
 (pages/reg-subs-page
  model/index

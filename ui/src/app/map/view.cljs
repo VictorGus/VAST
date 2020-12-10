@@ -22,6 +22,7 @@
             monitor-bubble {:radius 6
                             :fillOpacity 2.0
                             :fillKey "MONITOR"}
+            data-list (rf/subscribe [::model/index])
             usa-map (js/Datamap. (clj->js {:element (.getElementById js/document "container")
                                            :scope "usa"
                                            :geographyConfig {:borderColor "black"
@@ -36,10 +37,10 @@
                               (concat
                                (map
                                 (comp (partial merge monitor-bubble) normalize-coords)
-                                (:monitors @model/mini-db))
+                                (:monitors @data-list))
                                (map
                                 (comp (partial merge factory-bubble) normalize-coords)
-                                (:factories @model/mini-db)))))]
+                                (:factories @data-list)))))]
         (.bubbles usa-map markers (clj->js {:popupTemplate (fn [geo data]
                                                              (let [data (js->clj data :keywordize-keys true)]
                                                                (str "<div class=hoverinfo>"
@@ -64,5 +65,6 @@
 (pages/reg-subs-page
  model/index
  (fn [data]
-   [map-page data]))
+   (when (:loaded? data)
+     [map-page data])))
 

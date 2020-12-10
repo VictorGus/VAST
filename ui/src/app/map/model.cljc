@@ -3,8 +3,6 @@
 
 (def index ::index)
 
-(def mini-db (atom {}))
-
 (rf/reg-sub
  index
  (fn [db]
@@ -28,8 +26,12 @@
 (rf/reg-event-fx
  ::save-data
  (fn [{db :db} [_ {{{data :data} :entry} :data {{{:keys [type]} :params} :success} :request}]]
-   (swap! mini-db assoc type data)
-   {:db (assoc-in db [index :data type] data)}))
+   {:db (cond-> (assoc-in db [index :data type] data)
+          (or (and (get-in db [index :data :monitors])
+                   (= type :factories))
+              (and (get-in db [index :data :factories])
+                   (= type :monitors)))
+          (assoc-in [index :data :loaded?] true))}))
 
 (rf/reg-event-fx
  index

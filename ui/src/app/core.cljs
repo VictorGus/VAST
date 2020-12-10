@@ -10,7 +10,8 @@
             [app.pages :as pages]
             [app.layout :as layout]
             [app.data-grid.view]
-            [app.map.view]))
+            [app.map.view]
+            [app.charts.view]))
 
 (rf/reg-event-fx
  ::initialize

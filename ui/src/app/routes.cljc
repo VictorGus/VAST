@@ -1,7 +1,8 @@
 (ns app.routes)
 
 (def routes {:. :app.data-grid.model/index
-             "map" {:. :app.map.model/index}})
+             "map"       {:. :app.map.model/index}
+             "analytics" {:. :app.charts.model/index}})
 
 (defn route-index* [route pth]
   (merge

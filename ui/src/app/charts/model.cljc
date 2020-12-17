@@ -6,7 +6,20 @@
 (rf/reg-sub
  index
  (fn [db]
-   db))
+   (get-in db [index])))
+
+(rf/reg-event-fx
+ ::save-data
+ (fn [{db :db} [_ {:keys [data]}]]
+   {:db (-> db
+            (assoc-in [index :data]    data)
+            (assoc-in [index :loaded?] true))}))
+
+(rf/reg-event-fx
+ ::retrieve-data
+ (fn [{db :db} _]
+   {:xhr/fetch {:uri "/$measured-chemicals"
+                :success {:event ::save-data}}}))
 
 (rf/reg-event-fx
  index
@@ -15,4 +28,4 @@
      (= phase :deinit)
      {}
      (= phase :init)
-     {})))
+     {:dispatch [::retrieve-data]})))

@@ -11,6 +11,7 @@
             [app.dbcore   :as db]
             [app.manifest :as m]
             [app.loader]
+            [app.action]
             [org.httpkit.server :as server]
             [clojure.string :as str])
   (:import [java.io File])
@@ -35,7 +36,7 @@
                          [:id]   {:DELETE (app.loader/delete-monitor ctx)}
                          :POST (app.loader/load-monitor ctx)
                          :GET  (app.loader/retrieve-monitors ctx)}
-   })
+   "$measured-chemicals" {:GET (app.action/get-measured-chemicals ctx)}})
 
 (defn params-to-keyword [params]
   (reduce-kv (fn [acc k v]

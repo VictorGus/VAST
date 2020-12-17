@@ -6,22 +6,21 @@
             [app.styles :as styles]
             [app.charts.model :as model]))
 
-(defn chart [data]
+(defn chart [{:keys [data]}]
   (r/create-class
    {:component-did-mount
     (fn [this]
-      (let [ctx (.getContext (.getElementById js/document "chart") "2d")]
+      (let [ctx  (.getContext (.getElementById js/document "chart") "2d")
+            data (map #(assoc % :color (str "#"
+                                            (.toString
+                                             (.floor js/Math (* 16777215 (.random js/Math)))
+                                             16)))
+                      data)]
         (new js/Chart ctx (clj->js {:type "bar"
-                                    :data {:labels ["Green" "Green" "Green"
-                                                    "Green" "Green" "Green"]
-                                           :datasets [{:label "# of Votes"
-                                                       :data [12 19 3 5 2 3]
-                                                       :backgroundColor ["rgba(255, 99, 132, 0.2)"
-                                                                         "rgba(54, 162, 235, 0.2)"
-                                                                         "rgba(255, 255, 86, 0.2)"
-                                                                         "rgba(75, 192, 192, 0.2)"
-                                                                         "rgba(153, 102, 255, 0.2)"
-                                                                         "rgba(255, 159, 64, 0.2)"]}]}
+                                    :data {:labels (mapv :chemical data)
+                                           :datasets [{:label "Chemical"
+                                                       :data (mapv :sum data)
+                                                       :backgroundColor (mapv :color data)}]}
                                     :options {:scales {:yAxes [{:ticks {:beginAtZero true}}]}}}))))
     :reagent-render
     (fn [data]
@@ -31,4 +30,5 @@
  model/index
  (fn [data]
    [:div.container
-    [chart data]]))
+    (when (:loaded? data)
+      [chart data])]))

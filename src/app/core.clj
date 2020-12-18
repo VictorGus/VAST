@@ -18,25 +18,26 @@
   (:gen-class))
 
 (defn routes [ctx]
-  {"meteorological-data" {"$bulk" {:POST   (app.loader/bulk-load-meteorological-data ctx)}
-                          [:id]   {:GET    (app.loader/retrieve-meteorological-data ctx)
-                                   :DELETE (app.loader/delete-meteorological-data ctx)}
-                          :POST   (app.loader/load-meteorological-data ctx)
-                          :GET    (app.loader/retrieve-meteorological-data ctx)}
-   "sensor-data"         {"$bulk" {:POST   (app.loader/bulk-load-sensor-data ctx)}
-                          [:id]   {:GET    (app.loader/retrieve-sensor-data ctx)
-                                   :DELETE (app.loader/delete-sensor-data ctx)}
-                          :POST (app.loader/load-sensor-data ctx)
-                          :GET  (app.loader/retrieve-sensor-data ctx)}
-   "factory"            {"$bulk" {:POST (app.loader/bulk-load-factory ctx)}
-                         [:id]   {:DELETE (app.loader/delete-factory ctx)}
-                          :POST (app.loader/load-factory ctx)
-                          :GET  (app.loader/retrieve-factories ctx)}
-   "monitor"            {"$bulk" {:POST   (app.loader/bulk-load-monitor ctx)}
-                         [:id]   {:DELETE (app.loader/delete-monitor ctx)}
-                         :POST (app.loader/load-monitor ctx)
-                         :GET  (app.loader/retrieve-monitors ctx)}
-   "$measured-chemicals" {:GET (app.action/get-measured-chemicals ctx)}})
+  {"meteorological-data"  {"$bulk" {:POST   (app.loader/bulk-load-meteorological-data ctx)}
+                           [:id]   {:GET    (app.loader/retrieve-meteorological-data ctx)
+                                    :DELETE (app.loader/delete-meteorological-data ctx)}
+                           :POST   (app.loader/load-meteorological-data ctx)
+                           :GET    (app.loader/retrieve-meteorological-data ctx)}
+   "sensor-data"          {"$bulk" {:POST   (app.loader/bulk-load-sensor-data ctx)}
+                           [:id]   {:GET    (app.loader/retrieve-sensor-data ctx)
+                                    :DELETE (app.loader/delete-sensor-data ctx)}
+                           :POST (app.loader/load-sensor-data ctx)
+                           :GET  (app.loader/retrieve-sensor-data ctx)}
+   "factory"              {"$bulk" {:POST (app.loader/bulk-load-factory ctx)}
+                           [:id]   {:DELETE (app.loader/delete-factory ctx)}
+                           :POST (app.loader/load-factory ctx)
+                           :GET  (app.loader/retrieve-factories ctx)}
+   "monitor"              {"$bulk" {:POST   (app.loader/bulk-load-monitor ctx)}
+                           [:id]   {:DELETE (app.loader/delete-monitor ctx)}
+                           :POST (app.loader/load-monitor ctx)
+                           :GET  (app.loader/retrieve-monitors ctx)}
+   "$measured-chemicals"  {:GET (app.action/get-measured-chemicals ctx)}
+   "$polluting-factories" {:GET (app.action/get-polluting-factories ctx)}})
 
 (defn params-to-keyword [params]
   (reduce-kv (fn [acc k v]

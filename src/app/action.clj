@@ -20,7 +20,6 @@
     [x' y']))
 
 (defn get-coverage-area [{:keys [wind-speed longitude latitude]}]
-  (println wind-speed)
   (let [default-side-size 4
         squares [{:top-right-corner {:x (+ longitude (* default-side-size
                                                         (/ wind-speed 2)))
@@ -123,6 +122,29 @@
           #(factory-within-area? % possible-area))
          (get-closest-factory sensor))))
 
+(defn get-polluting-factories [{connection :db/connection :as ctx}]
+  (fn [{{:keys [factory_name]} :params :as request}]
+    (let [res (db/query {:select [[:sd.date_ts   :date_ts]
+                                  [:mt.longitude :longitude]
+                                  [:mt.latitude  :latitude]
+                                  [:md.direction :wind_direction]
+                                  [:md.speed     :wind_speed]]
+                         :from [[:sensor_data :sd]]
+                         :join [[:monitor :mt] [:= :mt.id :sd.monitor]]
+                         :left-join [[:meteo_data :md] [:= :sd.date_ts :md.date_ts]]
+                         :where (hsql/raw "md.date_ts is not null")} connection)
+          factories (db/query {:select [:*]
+                               :from [:factory]} connection)]
+      {:status 200
+       :body (distinct
+              (filter #(= (:factory %) factory_name) (map
+                                                      #(assoc % :factory (:factory_name
+                                                                          (find-factory (select-keys % [:longitude :latitude])
+                                                                                        (:wind_direction %)
+                                                                                        (:wind_speed %)
+                                                                                        factories)))
+                                                      res)))})))
+
 (comment
 
   (find-factory (db/query-first {:select [:*]
@@ -141,6 +163,14 @@
 
 
  ({:x -99.671, :y 40.806} {:x -103.671, :y 40.806} {:x -103.671, :y 36.806} {:x -99.671, :y 36.806} {:x -103.671, :y 40.806} {:x -107.671, :y 40.806} {:x -107.671, :y 36.806} {:x -103.671, :y 36.806} {:x -99.671, :y 36.806} {:x -103.671, :y 36.806} {:x -103.671, :y 32.806} {:x -99.671, :y 32.806} {:x -103.671, :y 36.806} {:x -107.671, :y 36.806} {:x -107.671, :y 32.806} {:x -103.671, :y 32.806})
+
+ (db/query {:select [:*]
+            :from [:meteo_data]
+            :where [:=
+                    (hsql/call :DATE :date_ts)
+                    (hsql/call :TO_DATE "2016-04-01" "YYYY-MM-DD")]} db/pool-config)
+
+ (.format (java.text.SimpleDateFormat. "yyyy-MM-dd") (clojure.instant/read-instant-date "2016-04-21"))
 
 
   )

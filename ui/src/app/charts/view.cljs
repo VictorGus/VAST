@@ -32,7 +32,6 @@
    {:component-did-mount
     (fn [this]
       (let [ctx  (.getContext (.getElementById js/document "chart") "2d")]
-        (println (mapv #(js/parseFloat (:reading %)) data))
         (new js/Chart ctx (clj->js {:type "line"
                                     :data {:labels (mapv #(first (clojure.string/split (:date_ts %) "T")) data)
                                            :datasets [{:label (:factory (first data))

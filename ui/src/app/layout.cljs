@@ -11,7 +11,7 @@
    {:title "Map"
     :uri   "#/map"}
    {:title "Analytics"
-    :uri   "#/analytics"}])
+    :uri   "#/analytics?type=chemicals"}])
 
 (def layout-style
   (styles/style

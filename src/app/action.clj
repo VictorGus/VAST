@@ -128,10 +128,12 @@
                                   [:mt.longitude :longitude]
                                   [:mt.latitude  :latitude]
                                   [:md.direction :wind_direction]
-                                  [:md.speed     :wind_speed]]
+                                  [:md.speed     :wind_speed]
+                                  [:sd.reading   :reading]]
                          :from [[:sensor_data :sd]]
                          :join [[:monitor :mt] [:= :mt.id :sd.monitor]]
                          :left-join [[:meteo_data :md] [:= :sd.date_ts :md.date_ts]]
+                         :order-by [:sd.date_ts]
                          :where (hsql/raw "md.date_ts is not null")} connection)
           factories (db/query {:select [:*]
                                :from [:factory]} connection)]
@@ -144,33 +146,3 @@
                                                                                         (:wind_speed %)
                                                                                         factories)))
                                                       res)))})))
-
-(comment
-
-  (find-factory (db/query-first {:select [:*]
-                                 :from [:monitor]
-                                 :where [:= :id "3"]} db/pool-config)
-                "190"
-                "4"
-                (db/query {:select [:*]
-                           :from [:factory]} db/pool-config))
-
-  [:top-right :top-left
-   :bottom-right :bottom-left]
-
-  [][]
-  [][]
-
-
- ({:x -99.671, :y 40.806} {:x -103.671, :y 40.806} {:x -103.671, :y 36.806} {:x -99.671, :y 36.806} {:x -103.671, :y 40.806} {:x -107.671, :y 40.806} {:x -107.671, :y 36.806} {:x -103.671, :y 36.806} {:x -99.671, :y 36.806} {:x -103.671, :y 36.806} {:x -103.671, :y 32.806} {:x -99.671, :y 32.806} {:x -103.671, :y 36.806} {:x -107.671, :y 36.806} {:x -107.671, :y 32.806} {:x -103.671, :y 32.806})
-
- (db/query {:select [:*]
-            :from [:meteo_data]
-            :where [:=
-                    (hsql/call :DATE :date_ts)
-                    (hsql/call :TO_DATE "2016-04-01" "YYYY-MM-DD")]} db/pool-config)
-
- (.format (java.text.SimpleDateFormat. "yyyy-MM-dd") (clojure.instant/read-instant-date "2016-04-21"))
-
-
-  )

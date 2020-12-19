@@ -57,7 +57,18 @@
         "Measured chemicals"]
        (for [factory (:factories data)]
          [:option {:value (:factory_name factory)}
-          (:factory_name factory)]))]]
+          (:factory_name factory)]))]
+     (when-not (:type chart-type)
+       [:select.custom-select.w-25.ml-3
+        {:onChange (fn [e]
+                     (let [data (-> e .-target .-value)]
+                       (rf/dispatch [::redirect/merge-params {:chemical (when-not (= "all" data) data)}])))}
+        (cons
+         [:option {:value "all"}
+          "All chemicals"]
+         (for [chemical (:chemicals data)]
+           [:option {:value chemical}
+            chemical]))])]
     (if (:loaded? data)
       [:<>
        (cond

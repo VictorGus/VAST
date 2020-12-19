@@ -37,7 +37,8 @@
                            :POST (app.loader/load-monitor ctx)
                            :GET  (app.loader/retrieve-monitors ctx)}
    "$measured-chemicals"  {:GET (app.action/get-measured-chemicals ctx)}
-   "$polluting-factories" {:GET (app.action/get-polluting-factories ctx)}})
+   "$polluting-factories" {:GET (app.action/get-polluting-factories ctx)}
+   "$chemicals"           {:GET (app.action/get-chemicals ctx)}})
 
 (defn params-to-keyword [params]
   (reduce-kv (fn [acc k v]

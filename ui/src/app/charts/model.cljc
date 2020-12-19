@@ -22,6 +22,11 @@
    {:db (assoc-in db [index :factories] data)}))
 
 (rf/reg-event-fx
+ ::save-chemicals
+ (fn [{db :db} [_ {:keys [data]}]]
+   {:db (assoc-in db [index :chemicals] (map :chemical data))}))
+
+(rf/reg-event-fx
  ::retrieve-data
  (fn [{db :db} [_ params]]
    {:xhr/fetch (cond-> {:success {:event ::save-data}}
@@ -39,6 +44,12 @@
                 :success {:event ::save-factories}}}))
 
 (rf/reg-event-fx
+ ::retrieve-chemicals
+ (fn [{db :db} _]
+   {:xhr/fetch {:uri "/$chemicals"
+                :success {:event ::save-chemicals}}}))
+
+(rf/reg-event-fx
  index
  (fn [{db :db} [pid phase {params :params}]]
    (cond
@@ -51,6 +62,11 @@
       :dispatch-n [[::retrieve-data {:type "chemicals"}]
                    [::retrieve-factories]]}
 
-     params
+     (:type params)
      {:dispatch [::retrieve-data params]
+      :db (assoc-in db [index :loaded?] false)}
+
+     (:factory_name params)
+     {:dispatch-n [[::retrieve-chemicals]
+                   [::retrieve-data params]]
       :db (assoc-in db [index :loaded?] false)})))

@@ -12,6 +12,14 @@
       {:status 200
        :body res})))
 
+(defn get-chemicals [{connection :db/connection :as ctx}]
+  (fn [req]
+    (let [res (db/query {:select [:chemical]
+                         :modifiers [:distinct]
+                         :from [:sensor_data]} connection)]
+      {:status 200
+       :body res})))
+
 (defn move-point [angle base point]
   (let [{xb :x yb :y} base
         {xp :x yp :y} point
@@ -123,7 +131,7 @@
          (get-closest-factory sensor))))
 
 (defn get-polluting-factories [{connection :db/connection :as ctx}]
-  (fn [{{:keys [factory_name]} :params :as request}]
+  (fn [{{:keys [factory_name chemical]} :params :as request}]
     (let [res (db/query {:select [[:sd.date_ts   :date_ts]
                                   [:mt.longitude :longitude]
                                   [:mt.latitude  :latitude]
@@ -134,7 +142,9 @@
                          :join [[:monitor :mt] [:= :mt.id :sd.monitor]]
                          :left-join [[:meteo_data :md] [:= :sd.date_ts :md.date_ts]]
                          :order-by [:sd.date_ts]
-                         :where (hsql/raw "md.date_ts is not null")} connection)
+                         :where [:and
+                                 (hsql/raw "md.date_ts is not null")
+                                 (when chemical [:= :sd.chemical chemical])]} connection)
           factories (db/query {:select [:*]
                                :from [:factory]} connection)]
       {:status 200
